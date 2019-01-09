@@ -23,4 +23,5 @@ private:
 	CRITICAL_SECTION _critSec;
 	HANDLE _hEvent = CreateEvent(NULL, TRUE, FALSE, "ReadyForPacket");
 	int _time = 0;
+	int _waitTime= 3000;
 };

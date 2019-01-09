@@ -58,7 +58,7 @@ void MClient::setEvent()
 
 void MClient::waitForEvent()
 {
-	WaitForSingleObject(_hEvent, INFINITE);
+	WaitForSingleObject(_hEvent, _waitTime);
 }
 
 MClient::~MClient()

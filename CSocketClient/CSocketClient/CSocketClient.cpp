@@ -68,7 +68,41 @@ void startClient() {
 
 	if (packetType == REGISTER) {
 		while (!exit) {
-			cout << "Connected successfully with id: " << recievedPacket.header.toId << endl;
+			switch (packetType) {
+			case REGISTER: {
+				cout << "Connected successfully with id: " << recievedPacket.header.toId << endl;
+				break;
+			}
+			case SEND: {
+				mclient.waitForEvent();
+				EnterCriticalSection(&cs);
+				if (recievedPacket.header.toId == mclient.getClientId()) {
+					mclient.packetAddition(recievedPacket);
+				}
+				LeaveCriticalSection(&cs);
+				break;
+			}
+			case EXIT: {
+				Packet deletionPacket(mclient.getClientId(), SERVER, SEND);
+				deletionPacket.sendPacket(ClientSocket);
+
+				Packet answerPacket;
+				PacketTypes type = answerPacket.recievePacket(ClientSocket);
+				if (type == OK) {
+					cout << "Client disconnected!" << endl;
+					exit = true;
+				}
+				break;
+			}
+			}
+
+			while (mclient.isContainingPackets()) {
+				EnterCriticalSection(&cs);
+				Packet savedPacket = mclient.getPacket();
+				cout << "Got the message from " << savedPacket.header.fromId << "!" << endl;
+				cout << "Message is: " << savedPacket.text;
+				LeaveCriticalSection(&cs);
+			}
 
 			EnterCriticalSection(&cs);
 			int userInput = getUserInput("*** MENU *** \n 1) Send message \n 2) Disconnect \n");
@@ -80,13 +114,11 @@ void startClient() {
 				string mssg;
 				cin >> mssg;
 
-				cout << "got message" << endl;
-
 				switch (ui) {
 				case 1: {
 					Packet sentToAllPacket(mclient.getClientId(), ALL_CLIENTS, SEND, mssg);
 					sentToAllPacket.sendPacket(ClientSocket);
-					cout << "sent message?" << endl;
+					cout << "sent message" << endl;
 					Packet answerPacket;
 					PacketTypes type = answerPacket.recievePacket(ClientSocket);
 					if (type == OK) {
@@ -117,8 +149,8 @@ void startClient() {
 				break;
 			}
 			case 2: {
-				Packet deletionPakcet(mclient.getClientId(), SERVER, SEND);
-				deletionPakcet.sendPacket(ClientSocket);
+				Packet deletionPacket(mclient.getClientId(), SERVER, SEND);
+				deletionPacket.sendPacket(ClientSocket);
 
 				Packet answerPacket;
 				PacketTypes type = answerPacket.recievePacket(ClientSocket);
